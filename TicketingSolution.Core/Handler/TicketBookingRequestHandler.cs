@@ -1,6 +1,9 @@
-﻿using TicketingSolution.Core.DataServices;
-using TicketingSolution.Core.Domain;
+﻿
+
+using TicketingSolution.Core.DataServices;
 using TicketingSolution.Core.Model;
+using TicketingSolution.Domain.BaseModels;
+using TicketingSolution.Domain;
 
 namespace TicketingSolution.Core.Handler
 {
@@ -22,13 +25,20 @@ namespace TicketingSolution.Core.Handler
             }
 
             var availableTickets = _ticketBookingService.GetAvailableTicket(bookingRequest.Date);
-
+            var result = CreateTicketBookingObject<ServiceBookingResult>(bookingRequest);
             if (availableTickets.Any())
             {
-                _ticketBookingService.Save(CreateTicketBookingObject<TicketBooking>(bookingRequest));
+                var Ticket = availableTickets.First();
+                var TicketBooking = CreateTicketBookingObject<TicketBooking>(bookingRequest);
+                TicketBooking.TicketID = Ticket.Id;
+                _ticketBookingService.Save(TicketBooking);
+                result.TicketBookingId = TicketBooking.TicketID;
+                result.Flag = Enum.BookingResultFlag.Success;
             }
 
-            
+            else result.Flag = Enum.BookingResultFlag.Failure;
+
+
             //_ticketBookingService.Save(new TicketBooking()
             //{
             //    Name = bookingRequest.Name,
@@ -36,7 +46,7 @@ namespace TicketingSolution.Core.Handler
             //    Email = bookingRequest.Email
             //});
 
-            return CreateTicketBookingObject<ServiceBookingResult>(bookingRequest);
+            return result;
 
             //return new ServiceBookingResult
             //{

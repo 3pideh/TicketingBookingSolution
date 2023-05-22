@@ -7,7 +7,7 @@ using TicketingSolution.Domain;
 
 namespace TicketingSolution.Core.Handler
 {
-    public class TicketBookingRequestHandler
+    public class TicketBookingRequestHandler : ITicketBookingRequestHandler
     {
         private readonly ITicketBookingService _ticketBookingService;
         public TicketBookingRequestHandler(ITicketBookingService ticketBookingService)

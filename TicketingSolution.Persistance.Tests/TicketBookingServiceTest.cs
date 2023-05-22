@@ -37,10 +37,35 @@ namespace TicketingSolution.Persistence.Tests
             var availbleService = ticketBookingService.GetAvailableTicket(date);
 
             //Assert.
-            Assert.Equal(1,availbleService.Count());
+            Assert.Equal(1, availbleService.Count());
             //Assert.Contains(availbleService, q => q.Id == 2);
             //Assert.Contains(availbleService, q => q.Id == 3);
             //Assert.DoesNotContain(availbleService, q => q.Id == 1 );
+
+        }
+
+
+        [Fact]
+        public void Should_Save_Ticket_Booking()
+        {
+            //Arrang
+            var dbOptions = new DbContextOptionsBuilder<TicketingSolutionDbContext>()
+             .UseInMemoryDatabase("ShouldSaveTest", b => b.EnableNullChecks(false))
+             .Options;
+
+            var ticketBooking = new TicketBooking { TicketID = 1, Date = new DateTime(2023, 05, 21) };
+
+            //Act
+            using var context = new TicketingSolutionDbContext(dbOptions);
+            var ticketBookingService = new TicketBookingService(context);
+            ticketBookingService.Save(ticketBooking);
+
+            //Assert
+            var bookings = context.TicketBookings.ToList();
+            var booking = Assert.Single(bookings);
+
+            Assert.Equal(ticketBooking.Date, booking.Date);
+
 
         }
     }

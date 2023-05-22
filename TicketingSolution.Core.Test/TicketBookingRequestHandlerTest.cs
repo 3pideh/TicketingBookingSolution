@@ -7,7 +7,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using TicketingSolution.Core.DataServices;
-using TicketingSolution.Core.Domain;
+using TicketingSolution.Domain;
+using TicketingSolution.Core.Enum;
 using TicketingSolution.Core.Handler;
 using TicketingSolution.Core.Model;
 
@@ -23,10 +24,11 @@ namespace TicketingSolution.Core.Test
         public Ticket_Booking_Request_Handler_Test()
         {
             //Arrange
-            
+
 
             _request = new TicketBookingRequest()
             {
+
                 Name = "Test",
                 Family = "TestFamily",
                 Email = "Test@gmail.com",
@@ -68,8 +70,8 @@ namespace TicketingSolution.Core.Test
 
         [Fact]
         public void Should_Throw_Exception_For_Null_Request()
-        {            
-            var exception = 
+        {
+            var exception =
                 Should.Throw<ArgumentNullException>(() => _handler.BookService(null));
 
             exception.ParamName.ShouldBe("bookingRequest");
@@ -89,16 +91,18 @@ namespace TicketingSolution.Core.Test
 
             _handler.BookService(_request);
 
-            _ticketBookingServiceMock.Verify(x => x.Save(It.IsAny<TicketBooking>()),Times.Once);
+            _ticketBookingServiceMock.Verify(x => x.Save(It.IsAny<TicketBooking>()), Times.Once);
 
             //Assert By Shouldly
             Savedbooking.ShouldNotBeNull();
             Savedbooking.Email.ShouldBe(_request.Email);
             Savedbooking.Name.ShouldBe(_request.Name);
             Savedbooking.Family.ShouldBe(_request.Family);
+            //first empty seat
+            Savedbooking.TicketID.ShouldBe(_avialbleTickets.First().Id);
 
 
-           
+
         }
 
         [Fact]
@@ -115,5 +119,49 @@ namespace TicketingSolution.Core.Test
 
         }
 
+        [Theory]
+        [InlineData(BookingResultFlag.Failure,false)]
+        [InlineData(BookingResultFlag.Success,true)]
+        //if isavail = true , return success
+        public void Should_Return_SuccessOrFailure_Flag_In_Result(BookingResultFlag bookingSuccessFlag, bool isAvailable)
+        {
+            if (!isAvailable)
+            {
+                _avialbleTickets.Clear();
+            }
+
+            var result = _handler.BookService(_request);
+
+            bookingSuccessFlag.ShouldBe(result.Flag);
         }
+
+        [Theory]
+        [InlineData(null,false)]
+        [InlineData(1,true)]
+        //if seat is available , save and return id of ticket
+        public void Should_Return_TicketBookingId_In_Result(int? ticketBookingId , bool isAvailable)
+        {
+            if (!isAvailable)
+            {
+                _avialbleTickets.Clear();
+            }
+            else
+            {
+                _ticketBookingServiceMock.Setup(x => x.Save(It.IsAny<TicketBooking>()))
+               .Callback<TicketBooking>
+               (booking =>
+               {
+                   booking.TicketID = ticketBookingId.Value;
+               });
+
+            }
+
+
+            var result = _handler.BookService(_request);
+
+            result.TicketBookingId.ShouldBe(ticketBookingId);
+        }
+
+
+    }
 }
